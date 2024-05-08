@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "incubit-rag"
+version = "0.1.0"
+description = "API for uploading, storing, embedding and querying files."
+authors = ["Denis <dychen93@hotmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.111.0"
+minio = "^7.2.7"
+python-dotenv = "^1.0.1"
+pydantic = "^2.7.1"
+
+
+[tool.poetry.group.dev.dependencies]
+black = "^24.4.2"
+flake8 = "^7.0.0"
+mypy = "^1.10.0"
+isort = "^5.13.2"
+
+[tool.isort]
+line_length = 120
+profile = "black"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
