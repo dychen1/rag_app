@@ -17,7 +17,5 @@ minio_client = Minio(
     secure=False,  # since its localhost, no https
 )
 
-print(f"{os.getenv('MINIO_HOSTNAME')}:{os.getenv('MINIO_PORT')}")
-print(os.getenv("MINIO_ROOT_USER"))
-print(os.getenv("MINIO_ROOT_PASSWORD"))
+
 app = FastAPI()
