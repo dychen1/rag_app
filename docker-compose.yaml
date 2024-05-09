@@ -1,21 +1,21 @@
 version: '3.7'
 
 # Single node single drive for demo purposes. No data persistence implemented.
-
 services:
   minio1:
     image: quay.io/minio/minio:RELEASE.2024-05-07T06-41-25Z
     hostname: minio
     volumes:
-      - data1:/data1
+      - ${MINIO_VOLUME}:/${MINIO_VOLUME}
     ports:
-      - "9001:9001"
+      - "${MINIO_API_PORT}:${MINIO_API_PORT}"
+      - "${MINIO_WEB_PORT}:${MINIO_WEB_PORT}"
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
-    command: server --console-address :9001 /data1
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    command: server --console-address :${MINIO_WEB_PORT} /${MINIO_VOLUME}
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: ["CMD", "curl", "-f", "http://localhost:${MINIO_API_PORT}/minio/health/live"]
       interval: 5s
       timeout: 5s
       retries: 5
