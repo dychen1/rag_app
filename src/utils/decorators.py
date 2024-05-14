@@ -1,9 +1,10 @@
 import asyncio
 from functools import wraps
 from fastapi import HTTPException
+import logging
 
 
-def async_retry(max_attempts: int = 3, initial_delay: int = 1, backoff_factor: int = 2):
+def async_retry(logger: logging.Logger, max_attempts: int = 3, initial_delay: int = 1, backoff_factor: int = 2):
     """
     Decorator to retry an asynchronous task with exponential backoff.
 
@@ -28,7 +29,10 @@ def async_retry(max_attempts: int = 3, initial_delay: int = 1, backoff_factor: i
                     attempts += 1
                     if attempts >= max_attempts:
                         raise HTTPException(status_code=500, detail=str(e)) from e
-                    print(f"{func.__name__}: Attempt {attempts} failed with error {e}. Retrying in {delay} seconds...")
+                    logger.warn(
+                        f"{func.__name__}: Attempt {attempts} failed with error {e}. Retrying in {delay} seconds..."
+                    )
+
                     await asyncio.sleep(delay)
                     delay *= backoff_factor
 

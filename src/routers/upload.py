@@ -12,7 +12,6 @@ from src.utils.minio import get_minio_client
 
 
 SUPPORT_FILE_TYPES: list[str] = ["pdf", "tiff", "png", "jpeg", "json"]  # Added json to be able to upload samples
-RETRY_ATTEMPTS: int = 3  # Try to upload file 3 times if upload to Minio fails
 router = APIRouter()
 logger = init_logger()
 
@@ -50,7 +49,13 @@ async def upload_files(
             continue
 
         bucket_name = f"{client}-{project}"
-        await ensure_bucket_exists(minio_client, bucket_name)
+        try:
+            await ensure_bucket_exists(minio_client, bucket_name)
+        except HTTPException as e:
+            msg = f"Failed to check/create bucket:\n{e}"
+            logger.error(msg)
+            raise HTTPException(status_code=500, detail=msg)
+
         try:
             file_name: str = file.filename
             file_data: BinaryIO = file.file
@@ -81,7 +86,7 @@ async def upload_files(
     return UploadResponse(signed_urls=signed_urls, details=details)
 
 
-@async_retry(max_attempts=3, initial_delay=2, backoff_factor=2)
+@async_retry(logger, max_attempts=3, initial_delay=1, backoff_factor=2)
 async def upload_to_minio(minio_client: Minio, bucket_name: str, file_data: BinaryIO, file_name: str) -> str:
     # Create a new object and stream data to it
     minio_client.put_object(
@@ -95,12 +100,8 @@ async def upload_to_minio(minio_client: Minio, bucket_name: str, file_data: Bina
     return minio_client.presigned_get_object(bucket_name, file_name)
 
 
+@async_retry(logger, max_attempts=2, initial_delay=1, backoff_factor=2)
 async def ensure_bucket_exists(minio_client: Minio, bucket_name: str) -> None:
-    try:
-        if not minio_client.bucket_exists(bucket_name):
-            minio_client.make_bucket(bucket_name)
-            minio_client.set_bucket_versioning(bucket_name, VersioningConfig(ENABLED))
-    except S3Error as e:
-        msg = f"Failed to check/create bucket:\n{e}"
-        logger.error(msg)
-        raise HTTPException(status_code=500, detail=msg)
+    if not minio_client.bucket_exists(bucket_name):
+        minio_client.make_bucket(bucket_name)
+        minio_client.set_bucket_versioning(bucket_name, VersioningConfig(ENABLED))
