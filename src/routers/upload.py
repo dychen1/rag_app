@@ -1,5 +1,4 @@
 from fastapi import HTTPException, Depends, UploadFile, APIRouter, Form
-from minio.error import S3Error
 from minio import Minio
 from minio.versioningconfig import VersioningConfig
 from minio.commonconfig import ENABLED

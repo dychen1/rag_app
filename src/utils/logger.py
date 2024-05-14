@@ -1,10 +1,10 @@
 import logging
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
+import os
 
 
 def init_logger(
-    level: str = "info",
     app_name: str = "app",
     file_path: Path = Path(__file__).parent.parent.parent / "etc" / "logs",
     file_limit: int = 1024 * 1024 * 50,
@@ -29,7 +29,9 @@ def init_logger(
     file_path.mkdir(parents=True, exist_ok=True)  # Ensure the file path exists before creating log files to dir
 
     format = "%(threadName)s - %(asctime)s - %(name)s - %(funcName)s - %(levelname)s - %(message)s"
-    logger.setLevel(level.upper())
+    level = ("debug" if os.getenv("DEBUG") == "TRUE" else "info").upper()
+    logger.setLevel(level=level)
+    print(f"Initializing logger on {level} level.")
 
     # Main log handler
     handler = RotatingFileHandler(
