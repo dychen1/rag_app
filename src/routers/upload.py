@@ -23,6 +23,18 @@ async def upload_files(
     project: str = Form(...),
     minio_client: Minio = Depends(get_minio_client),
 ) -> UploadResponse:
+    """
+    Upload files to a Minio bucket associated with a client and project and returns signed URLs.
+
+    Args:
+        files (list[UploadFile]): List of files to be uploaded.
+        client (str): Client identifier for the bucket.
+        project (str): Project identifier for the bucket.
+        minio_client (Minio): Minio client instance, injected via dependency.
+
+    Returns:
+        UploadResponse: Response object containing signed URLs and details of the upload process.
+    """
     signed_urls: list[str] = []
     empty_files: list[str] = []
     unsupported_files: list[str] = []
@@ -88,6 +100,18 @@ async def upload_files(
 
 @async_retry(logger, max_attempts=3, initial_delay=1, backoff_factor=2)
 async def upload_to_minio(minio_client: Minio, bucket_name: str, file_data: BinaryIO, file_name: str) -> str:
+    """
+    Uploads a file to a Minio bucket and generates a presigned URL for accessing the uploaded file.
+
+    Args:
+        minio_client (Minio): Minio client instance.
+        bucket_name (str): Name of the bucket to upload the file to.
+        file_data (BinaryIO): File data to be uploaded in binary.
+        file_name (str): Name of the file to be uploaded.
+
+    Returns:
+        str: Presigned URL for accessing the uploaded file.
+    """
     # Create a new object and stream data to it
     minio_client.put_object(
         bucket_name=bucket_name,
@@ -102,6 +126,13 @@ async def upload_to_minio(minio_client: Minio, bucket_name: str, file_data: Bina
 
 @async_retry(logger, max_attempts=2, initial_delay=1, backoff_factor=2)
 async def ensure_bucket_exists(minio_client: Minio, bucket_name: str) -> None:
+    """
+    Ensure that a specified Minio bucket exists and creates it if not with versioning enabled.
+
+    Args:
+        minio_client (Minio): Minio client instance.
+        bucket_name (str): Name of the bucket to check/create.
+    """
     if not minio_client.bucket_exists(bucket_name):
         minio_client.make_bucket(bucket_name)
         minio_client.set_bucket_versioning(bucket_name, VersioningConfig(ENABLED))
