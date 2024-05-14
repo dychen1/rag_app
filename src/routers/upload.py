@@ -6,13 +6,15 @@ from minio.commonconfig import ENABLED
 from typing import BinaryIO
 
 from src.models.response import UploadResponse
-from src.utils.minio import get_minio_client
 from src.utils.decorators import async_retry
+from src.utils.logger import init_logger
+from src.utils.minio import get_minio_client
 
 
 SUPPORT_FILE_TYPES: list[str] = ["pdf", "tiff", "png", "jpeg", "json"]  # Added json to be able to upload samples
 RETRY_ATTEMPTS: int = 3  # Try to upload file 3 times if upload to Minio fails
 router = APIRouter()
+logger = init_logger()
 
 
 @router.post("/upload")
@@ -56,6 +58,7 @@ async def upload_files(
             signed_urls.append(file_url)
             successfully_uploaded_files.append(file.filename)
         except HTTPException as e:
+            logger.error(f"Failed to upload {file.filename} to Minio bucket:\n{e}")
             failed_upload_files.append(file.filename)
 
     # Logging
@@ -73,6 +76,7 @@ async def upload_files(
         details += "All files successfully uploaded."
     else:
         details += f"{len(successfully_uploaded_files)} successfully uploaded files: {successfully_uploaded_files}."
+    logger.info(details)
 
     return UploadResponse(signed_urls=signed_urls, details=details)
 
@@ -97,4 +101,6 @@ async def ensure_bucket_exists(minio_client: Minio, bucket_name: str) -> None:
             minio_client.make_bucket(bucket_name)
             minio_client.set_bucket_versioning(bucket_name, VersioningConfig(ENABLED))
     except S3Error as e:
-        raise HTTPException(status_code=500, detail=f"Failed to check/create bucket: {e}")
+        msg = f"Failed to check/create bucket:\n{e}"
+        logger.error(msg)
+        raise HTTPException(status_code=500, detail=msg)
