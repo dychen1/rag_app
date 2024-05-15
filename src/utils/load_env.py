@@ -36,4 +36,4 @@ def load_env_vars(env_file: str) -> None:
 
     missing_vars = [var for var in REQUIRED_VARS if not os.getenv(var, "").strip()]
     if missing_vars:
-        raise EnvironmentError(f"Missing environment variables: {', '.join(missing_vars)}")
+        raise EnvironmentError(f"Missing required environment variables: {', '.join(missing_vars)}")

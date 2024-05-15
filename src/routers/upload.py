@@ -2,6 +2,7 @@ from fastapi import HTTPException, Depends, UploadFile, APIRouter, Form
 from minio import Minio
 from minio.versioningconfig import VersioningConfig
 from minio.commonconfig import ENABLED
+from pathlib import Path
 from typing import BinaryIO
 
 from src.models.response import UploadResponse
@@ -10,9 +11,9 @@ from src.utils.logger import init_logger
 from src.utils.clients import get_minio_client
 
 
-SUPPORT_FILE_TYPES: list[str] = ["pdf", "tiff", "png", "jpeg", "json"]  # Added json to be able to upload samples
+SUPPORT_FILE_TYPES: list[str] = ["pdf", "tiff", "png", "jpeg"]
 router = APIRouter()
-logger = init_logger()
+logger = init_logger(file_path=Path(__file__).parent.parent.parent / "etc" / "logs")
 
 
 @router.post("/upload")

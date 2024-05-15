@@ -24,11 +24,11 @@ from src.utils.clients import get_pinecone_client
 from src.utils.hashers import hash_string
 
 
+ETC_PATH: Path = Path(__file__).parent.parent.parent / "etc"
 router = APIRouter()
-logger = init_logger()
+logger = init_logger(file_path=ETC_PATH / "logs")
 
 # Ensure tmp download path is created
-ETC_PATH: Path = Path(__file__).parent.parent.parent / "etc"
 TMP_PATH: Path = ETC_PATH / "tmp"
 TMP_PATH.mkdir(parents=True, exist_ok=True)
 PARTIAL_SUFFIX: str = ".part"

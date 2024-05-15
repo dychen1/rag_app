@@ -2,11 +2,12 @@ import logging
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 import os
+import sys
 
 
 def init_logger(
+    file_path: Path,
     app_name: str = "app",
-    file_path: Path = Path(__file__).parent.parent.parent / "etc" / "logs",
     file_limit: int = 1024 * 1024 * 50,
     rollover_limit: int = 10,
 ) -> logging.Logger:
@@ -47,5 +48,11 @@ def init_logger(
     err_only_handler.setFormatter(logging.Formatter(format))
     err_only_handler.addFilter(lambda record: record.levelno >= logging.ERROR)
     logger.addHandler(err_only_handler)
+
+    # Stream to stdout in dev mode
+    if level == "DEBUG":
+        stream_handler = logging.StreamHandler(stream=sys.stdout)
+        stream_handler.setFormatter(logging.Formatter(format))
+        logger.addHandler(stream_handler)
 
     return logger
