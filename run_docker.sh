@@ -1,1 +1,1 @@
-docker-compose --env-file ./etc/minio.env up
+docker-compose --env-file ./etc/.env up --build

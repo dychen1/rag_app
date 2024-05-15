@@ -1,8 +1,8 @@
 version: '3.7'
 
-# Single node single drive for demo purposes. No data persistence implemented.
 services:
   minio1:
+    # Single node single drive for demo purposes. No data persistence implemented.
     image: quay.io/minio/minio:RELEASE.2024-05-07T06-41-25Z
     hostname: minio
     volumes:
@@ -15,10 +15,21 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     command: server --console-address :${MINIO_WEB_PORT} /${MINIO_VOLUME}
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${MINIO_API_PORT}/minio/health/live"]
+      test: ["CMD", "curl", "-f", "http://${MINIO_HOSTNAME}:${MINIO_API_PORT}/minio/health/live"]
       interval: 5s
       timeout: 5s
       retries: 5
+
+  rag_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "${APP_PORT}:${APP_PORT}"
+    environment:
+      APP_PORT: ${APP_PORT}
+    depends_on:
+      - minio1
 
 volumes:
   data1:

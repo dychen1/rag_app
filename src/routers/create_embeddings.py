@@ -97,7 +97,7 @@ async def create_embeddings(
     # Add metadata to documents and generate ids for vectors manually
     ids: list[str] = []
     for idx, doc in enumerate(documents):
-        doc.metadata = {"name": file_name, "chunk_id": idx}
+        doc.metadata = {"name": file_name, "chunk_id": idx, "timestamp": timestamp}
         ids.append(hash_string(f"{idx}_{file_name}"))  # Hash ids so that we can represent doc name in ASCII
     logger.debug(f"Generated {len(ids)} id's for documents chunks: {ids}.")
 
