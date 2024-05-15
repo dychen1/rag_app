@@ -7,7 +7,7 @@ from typing import BinaryIO
 from src.models.response import UploadResponse
 from src.utils.decorators import async_retry
 from src.utils.logger import init_logger
-from src.utils.minio import get_minio_client
+from src.utils.clients import get_minio_client
 
 
 SUPPORT_FILE_TYPES: list[str] = ["pdf", "tiff", "png", "jpeg", "json"]  # Added json to be able to upload samples

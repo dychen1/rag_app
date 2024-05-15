@@ -1,5 +1,5 @@
 from pathlib import Path
-from src.utils.env import load_env_vars
+from src.utils.load_env import load_env_vars
 from src.utils.logger import init_logger
 
 # Init env
