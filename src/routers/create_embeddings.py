@@ -50,48 +50,53 @@ async def create_embeddings(
     Endpoint to create and store embeddings for a document fetched from a given URL.
 
     Args:
-        request (CreateEmbeddingsRequest): The request object containing the URL of the document to be processed, along with client and project information.
+        request (CreateEmbeddingsRequest): Request object containing the URL of the document to be processed, along with client and project information.
         pinecone_client (Depends): Dependency injection for the Pinecone client.
 
     Returns:
-        CreateEmbeddingsResponse: The response object containing details of the operation.
+        CreateEmbeddingsResponse: Response object containing details of the operation.
 
     Workflow:
-        1. Downloads the file from the specified URL and saves it with a timestamp to avoid conflicts.
+        1. Downloads the file from the specified URL.
         2. Runs a mock OCR extraction on the downloaded file to produce a langchain Document.
         3. Cleans up by deleting the downloaded file from the temporary storage.
-        4. Splits the OCR output into smaller chunks, supporting Japanese punctuation.
+        4. Splits the OCR output into smaller chunks.
         5. Adds metadata to each chunk and generates unique IDs for the vectors.
-        6. Checks if a Pinecone index exists for the client; if not, creates one.
+        6. Checks if a Pinecone index exists for the client; if not, creates one for the client.
         7. Uploads the embeddings to the vector database.
-        8. Logs the process and handles any exceptions that may occur during the process.
     """
+    # Set file path
+    # Epoch time in microseconds to minimize race condition when two files with same name are downloaded at the same time
+    timestamp: int = int(datetime.now(timezone.utc).timestamp() * 10**6)
+    file_name: str = unquote(str(os.path.basename(urlparse(request.url).path)))
+    stamped_file_name = str(timestamp) + "_" + file_name
+    file_path: Path = TMP_PATH / stamped_file_name
+
     # Download file to disk
     async with ClientSession() as session:
-        # Int epoch time in microseconds, extra percision to minimize race condition when two files with same
-        # name are downloaded at the same time
-        timestamp: int = int(datetime.now(timezone.utc).timestamp() * 10**6)
-        file_name: str = unquote(str(os.path.basename(urlparse(request.url).path)))
-        stamped_file_name = str(timestamp) + "_" + file_name
-        file_path: Path = TMP_PATH / stamped_file_name
-        logger.debug(f"Downloading to {file_path}.")
-
         try:
-            await download_file(session, request.url, file_path)
+            logger.debug(f"Downloading to {file_path}.")
+            start = time.time()
+            await _download_file(session, request.url, file_path)
+            file_size: float = round(os.path.getsize(file_path) / 1024, 2)  # File size in KB
+            logger.info(f"Downloaded file of size {file_size}KB in {round(time.time()-start, 2)}s.")
         except HTTPException as e:
             msg = f"Failed to download file from url: {e}"
             logger.error(msg)
             raise HTTPException(status_code=500, detail=msg)
 
     # Run mock OCR and produce langchain Document
-    full_content: Document = await mock_ocr_extraction(file_name)
+    try:
+        full_content: Document = await _mock_ocr_extraction(file_name)
+    except MemoryError:
+        logger.error(f"File of size {file_size}KB")
 
     # Clean up tmp space
     logger.debug(f"Cleaning up/deleting {file_path}.")
     os.remove(file_path)
 
     # Chunk ORC output with langchain, supports Japanese punctuation when chunking
-    documents: list[Document] = chunk_content(full_content)
+    documents: list[Document] = _chunk_content(full_content)
     logger.info(f"Split content into {len(documents)} documents.")
 
     # Add metadata to documents and generate ids for vectors manually
@@ -102,7 +107,7 @@ async def create_embeddings(
     logger.debug(f"Generated {len(ids)} id's for documents chunks: {ids}.")
 
     # Check pinecone for index, create if it doesnt exist for client
-    check_pinecone_index(request.client, pinecone_client)
+    _check_pinecone_index(request.client, pinecone_client)
 
     # Upload embeddings to vector db
     try:
@@ -119,12 +124,12 @@ async def create_embeddings(
         raise HTTPException(status_code=500, detail=msg)
 
     return CreateEmbeddingsResponse(
-        details=f"Sucessfully added document {file_name} to vector store under index {request.client} with namespace {request.project}"
+        details=f"Sucessfully added document {file_name} to vector store under index '{request.client}' with namespace '{request.project}'"
     )
 
 
 @async_retry(logger, max_attempts=3, initial_delay=1, backoff_factor=2)
-async def download_file(session: ClientSession, url: str, file_path: Path) -> None:
+async def _download_file(session: ClientSession, url: str, file_path: Path) -> None:
     """
     Downloads a file from the given URL and saves it to disk, supporting resumable downloads.
 
@@ -145,14 +150,14 @@ async def download_file(session: ClientSession, url: str, file_path: Path) -> No
         response.raise_for_status()
 
         async with aiofiles.open(partial_file, mode) as f:
-            async for chunk in response.content.iter_chunked(1024):
+            async for chunk in response.content.iter_chunked(1024 * 10):  # Reads response in 10KB chunks
                 await f.write(chunk)
                 await f.flush()
 
     partial_file.rename(file_path)  # Remove .part suffix when download is complete
 
 
-async def mock_ocr_extraction(file_name: str) -> Document:
+async def _mock_ocr_extraction(file_name: str) -> Document:
     """
     Mock function to extract OCR content from a specified PDF file.
 
@@ -185,7 +190,7 @@ async def mock_ocr_extraction(file_name: str) -> Document:
     return Document(page_content=content)
 
 
-def chunk_content(
+def _chunk_content(
     content: Document, encoding_name: str = "cl100k_base", chunk_size: int = 8191, chunk_overlap: int = 50
 ) -> list[Document]:
     """
@@ -204,7 +209,7 @@ def chunk_content(
     Example:
         >>> from langchain.schema import Document
         >>> doc = Document(page_content="This is a long document that needs to be chunked.")
-        >>> chunks = chunk_content(doc)
+        >>> chunks = _chunk_content(doc)
         >>> for chunk in chunks:
         ...     print(chunk.page_content)
     """
@@ -232,7 +237,7 @@ def chunk_content(
 
 
 @lru_cache(maxsize=8)  # Can increase cache size if we have more indexes
-def check_pinecone_index(
+def _check_pinecone_index(
     client: str,
     pinecone_client: Pinecone,
     dimension: int | None = None,

@@ -34,6 +34,12 @@ async def upload_files(
 
     Returns:
         UploadResponse: Response object containing signed URLs and details of the upload process.
+
+    Workflow:
+        - Iterate through list of files.
+        - Perform checks on each file.
+        - Make sure Minio bucket exists for the client+project, creates one if it doesnt.
+        -
     """
     signed_urls: list[str] = []
     empty_files: list[str] = []
@@ -62,7 +68,7 @@ async def upload_files(
 
         bucket_name = f"{client}-{project}"
         try:
-            await ensure_bucket_exists(minio_client, bucket_name)
+            await _ensure_bucket_exists(minio_client, bucket_name)
         except HTTPException as e:
             msg = f"Failed to check/create bucket:\n{e}"
             logger.error(msg)
@@ -71,7 +77,7 @@ async def upload_files(
         try:
             file_name: str = file.filename
             file_data: BinaryIO = file.file
-            file_url: str = await upload_to_minio(minio_client, bucket_name, file_data, file_name)
+            file_url: str = await _upload_to_minio(minio_client, bucket_name, file_data, file_name)
             signed_urls.append(file_url)
             successfully_uploaded_files.append(file.filename)
         except HTTPException as e:
@@ -99,7 +105,7 @@ async def upload_files(
 
 
 @async_retry(logger, max_attempts=3, initial_delay=1, backoff_factor=2)
-async def upload_to_minio(minio_client: Minio, bucket_name: str, file_data: BinaryIO, file_name: str) -> str:
+async def _upload_to_minio(minio_client: Minio, bucket_name: str, file_data: BinaryIO, file_name: str) -> str:
     """
     Uploads a file to a Minio bucket and generates a presigned URL for accessing the uploaded file.
 
@@ -125,7 +131,7 @@ async def upload_to_minio(minio_client: Minio, bucket_name: str, file_data: Bina
 
 
 @async_retry(logger, max_attempts=2, initial_delay=1, backoff_factor=2)
-async def ensure_bucket_exists(minio_client: Minio, bucket_name: str) -> None:
+async def _ensure_bucket_exists(minio_client: Minio, bucket_name: str) -> None:
     """
     Ensure that a specified Minio bucket exists and creates it if not with versioning enabled.
 
