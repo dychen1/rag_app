@@ -163,12 +163,12 @@ async def _mock_ocr_extraction(file_path: Path) -> Document:
                 data = json.load(file)
                 content = data["analyzeResult"]["content"]
 
+        elif str(file_path).endswith(".txt"):  # For testing convenience
+            with open(file_path) as file:
+                content = file.read()
+
         else:
             content = ""  # Only supporting sample files for now
-
-            # Uncomment for testing with .txt file
-            # with open(file_path) as file:
-            #     content = file.read()
 
         logger.info(f"Size of content from {file_name}: {round(sys.getsizeof(content)/1024, 2)}KB")
     except MemoryError:
