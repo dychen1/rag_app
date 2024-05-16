@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from langchain_core.documents import Document
 
 
 class UploadResponse(BaseModel):
@@ -8,3 +9,8 @@ class UploadResponse(BaseModel):
 
 class CreateEmbeddingsResponse(BaseModel):
     details: str
+
+
+class QueryResponse(BaseModel):
+    answer: str
+    context: list[str]
