@@ -10,7 +10,7 @@ COPY src/ /app/src/
 COPY etc/ /app/etc/
 
 # Install dependency globally in container
-RUN poetry config virtualenvs.create false && poetry install --no-interaction --no-ansi
+RUN poetry config virtualenvs.create false && poetry install --no-interaction --no-ansi --no-dev
 
 EXPOSE ${APP_PORT}
 CMD ["sh", "-c", "python3 -m uvicorn src.app:app --host 0.0.0.0 --port ${APP_PORT}"]
