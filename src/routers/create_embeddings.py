@@ -91,7 +91,7 @@ async def create_embeddings(
     )
 
 
-@async_retry(logger, max_attempts=3, initial_delay=1, backoff_factor=2)
+@async_retry(logger, max_attempts=3, initial_delay=1, backoff_base=2)
 async def _download_file(url: str, download_path: Path) -> None:
     """
     Downloads a file from the given URL and saves it to disk, supporting resumable downloads.
@@ -166,6 +166,10 @@ async def _mock_ocr_extraction(file_path: Path) -> Document:
         else:
             content = ""  # Only supporting sample files for now
 
+            # Uncomment for testing with .txt file
+            # with open(file_path) as file:
+            #     content = file.read()
+
         logger.info(f"Size of content from {file_name}: {round(sys.getsizeof(content)/1024, 2)}KB")
     except MemoryError:
         logger.error(f"Not enough memory for file of size {round(os.path.getsize(file_path) / 1024 / 1024, 4)}MB")
@@ -173,7 +177,7 @@ async def _mock_ocr_extraction(file_path: Path) -> Document:
     return Document(page_content=content)
 
 
-@async_retry(logger=logger, max_attempts=3, initial_delay=1, backoff_factor=2)
+@async_retry(logger=logger, max_attempts=3, initial_delay=1, backoff_base=2)
 async def _upload_to_vectorstore(
     index: Index, client: str, project: str, documents: list[Document], ids: list[str]
 ) -> None:

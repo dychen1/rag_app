@@ -104,7 +104,7 @@ async def upload_files(
     return UploadResponse(signed_urls=signed_urls, details=details)
 
 
-@async_retry(logger, max_attempts=3, initial_delay=1, backoff_factor=2)
+@async_retry(logger, max_attempts=3, initial_delay=1, backoff_base=2)
 async def _upload_to_minio(minio_client: Minio, bucket_name: str, file_data: BinaryIO, file_name: str) -> str:
     """
     Uploads a file to a Minio bucket and generates a presigned URL for accessing the uploaded file.
@@ -130,7 +130,7 @@ async def _upload_to_minio(minio_client: Minio, bucket_name: str, file_data: Bin
     return minio_client.presigned_get_object(bucket_name, file_name)
 
 
-@async_retry(logger, max_attempts=2, initial_delay=1, backoff_factor=2)
+@async_retry(logger, max_attempts=2, initial_delay=1, backoff_base=2)
 async def _ensure_bucket_exists(minio_client: Minio, bucket_name: str) -> None:
     """
     Ensure that a specified Minio bucket exists and creates it if not with versioning enabled.

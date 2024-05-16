@@ -4,14 +4,14 @@ from fastapi import HTTPException
 import logging
 
 
-def async_retry(logger: logging.Logger, max_attempts: int = 3, initial_delay: int = 1, backoff_factor: int = 2):
+def async_retry(logger: logging.Logger, max_attempts: int = 3, initial_delay: int = 1, backoff_base: int = 2):
     """
     Decorator to retry an asynchronous task with exponential backoff.
 
     Args:
         max_attempts (int): Maximum number of retry attempts.
         initial_delay (int): Initial delay between retries in seconds.
-        backoff_factor (int): Factor by which to multiply the delay for each subsequent retry.
+        backoff_base (int): Factor by which to multiply the delay for each subsequent retry.
 
     Returns:
         Decorated function with retry capability.
@@ -34,7 +34,7 @@ def async_retry(logger: logging.Logger, max_attempts: int = 3, initial_delay: in
                     )
 
                     await asyncio.sleep(delay)
-                    delay *= backoff_factor
+                    delay += backoff_base**attempts
 
         return wrapper
 
