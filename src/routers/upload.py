@@ -11,7 +11,7 @@ from src.utils.logger import init_logger
 from src.utils.clients import get_minio_client
 
 
-SUPPORT_FILE_TYPES: list[str] = ["pdf", "tiff", "png", "jpeg"]
+SUPPORT_FILE_TYPES: list[str] = ["pdf", "tiff", "png", "jpeg", "txt"]  # Added txt for testing
 router = APIRouter()
 logger = init_logger(file_path=Path(__file__).parent.parent.parent / "etc" / "logs")
 
