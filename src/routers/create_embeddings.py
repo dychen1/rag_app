@@ -107,7 +107,7 @@ async def create_embeddings(
     logger.debug(f"Generated {len(ids)} id's for documents chunks: {ids}.")
 
     # Check pinecone for index, create if it doesnt exist for client
-    _check_pinecone_index(request.client, pinecone_client)
+    await _check_pinecone_index(request.client, pinecone_client)
 
     # Upload embeddings to vector db
     try:
@@ -237,7 +237,7 @@ def _chunk_content(
 
 
 @lru_cache(maxsize=8)  # Can increase cache size if we have more indexes
-def _check_pinecone_index(
+async def _check_pinecone_index(
     client: str,
     pinecone_client: Pinecone,
     dimension: int | None = None,
@@ -247,6 +247,7 @@ def _check_pinecone_index(
 ) -> None:
     """
     Creates a Pinecone index if it doesn't already exist.
+    NOTE: We are only creating an index here for demo/testing purposes!!
 
     Args:
         client (str): Name of the index.
@@ -258,6 +259,9 @@ def _check_pinecone_index(
     """
     existing_index_names = [idx.name for idx in pinecone_client.list_indexes()]
     logger.debug(f"Index list {existing_index_names}")
+
+    # NOTE: We are only creating an index here for demo/testing purposes
+    # Real endpoint should not create an index if it doesnt exist, it should throw an error
     if client not in existing_index_names:
         pinecone_client.create_index(
             name=client,
