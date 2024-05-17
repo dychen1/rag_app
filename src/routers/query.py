@@ -4,12 +4,12 @@ from langchain_core.documents import Document
 
 from src.models.response import QueryResponse
 from src.models.requests import QueryRequest
-from src.utils.logger import init_logger
+from src.utils.logger import get_logger
 from src.utils.chain import create_rag_chain
 from src.utils.clients import get_pinecone_index
 
 router = APIRouter()
-logger = init_logger(file_path=Path(__file__).parent.parent.parent / "etc" / "logs")
+logger = get_logger(file_path=Path(__file__).parent.parent.parent / "etc" / "logs")
 
 
 @router.post("/query")
@@ -22,9 +22,6 @@ async def query(request: QueryRequest) -> QueryResponse:
 
     Returns:
         QueryResponse: The response containing the answer and the context used to generate the answer.
-
-    Raises:
-        TypeError: If the response does not contain the expected types for 'answer' and 'context'.
 
     This function performs the following steps:
     1. Retrieves the Pinecone index which serves as a connection using the provided client information.
@@ -43,6 +40,7 @@ async def query(request: QueryRequest) -> QueryResponse:
     )
     logger.debug(f"Chain created: {chain}")
     response: dict[str, list[Document] | str] = chain.invoke(request.query)
+
     if isinstance(response["answer"], str) and isinstance(response["context"], list):
         answer: str = response["answer"]
         context: list[str] = [doc.page_content for doc in response["context"]]

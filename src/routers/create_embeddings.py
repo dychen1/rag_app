@@ -15,14 +15,14 @@ from urllib.parse import urlparse, unquote
 from src.models.requests import CreateEmbeddingsRequest
 from src.models.response import CreateEmbeddingsResponse
 from src.utils.decorators import async_retry
-from src.utils.logger import init_logger
+from src.utils.logger import get_logger
 from src.utils.clients import get_pinecone_index
 from src.utils.hashers import hash_string
 from src.utils.chain import get_lc_pinecone, chunk_content
 
 ETC_PATH: Path = Path(__file__).parent.parent.parent / "etc"
 router = APIRouter()
-logger = init_logger(file_path=ETC_PATH / "logs")
+logger = get_logger(file_path=ETC_PATH / "logs")
 
 # Ensure tmp download path is created
 TMP_PATH: Path = ETC_PATH / "tmp"
@@ -63,7 +63,7 @@ async def create_embeddings(
     await _download_file(request.url, file_path)
 
     # Run mock OCR and produce langchain Document
-    full_content: Document = await _mock_ocr_extraction(file_path)
+    full_content: Document = await _mock_ocr_extraction(file_name)
 
     # Clean up tmp space
     os.remove(file_path)
@@ -87,7 +87,10 @@ async def create_embeddings(
     await _upload_to_vectorstore(index, request.client, request.project, documents, ids)
 
     return CreateEmbeddingsResponse(
-        details=f"Sucessfully added document {file_name} to vector store under index '{request.client}' with namespace '{request.project}'"
+        ids=ids,
+        timestamp=timestamp,
+        file_name=file_name,
+        details=f"Sucessfully added document to vector store under index '{request.client}' with namespace '{request.project}'",
     )
 
 
@@ -135,7 +138,7 @@ async def _download_file(url: str, download_path: Path) -> None:
             raise HTTPException(status_code=500, detail=msg)
 
 
-async def _mock_ocr_extraction(file_path: Path) -> Document:
+async def _mock_ocr_extraction(file_name: str) -> Document:
     """
     Mock function to extract OCR content from a specified PDF file.
 
@@ -151,20 +154,20 @@ async def _mock_ocr_extraction(file_path: Path) -> Document:
     """
     # TODO: Incremental loading of OCR output as to not load all content of document into mem all at once
     samples_path = ETC_PATH / "ocr_samples"
-    file_name = os.path.basename(file_path)
     try:
         if file_name == "建築基準法施行令.pdf":
             with open(samples_path / "建築基準法施行令.json") as file:
                 data = json.load(file)
                 content = data["analyzeResult"]["content"]
+                print("HERE@@@")
 
         elif file_name == "東京都建築安全条例.pdf":
             with open(samples_path / "東京都建築安全条例.json") as file:
                 data = json.load(file)
                 content = data["analyzeResult"]["content"]
 
-        elif str(file_path).endswith(".txt"):  # For testing convenience
-            with open(file_path) as file:
+        elif str(file_name).endswith(".txt"):  # For testing convenience
+            with open(ETC_PATH / "sample_files" / file_name) as file:
                 content = file.read()
 
         else:
@@ -172,7 +175,7 @@ async def _mock_ocr_extraction(file_path: Path) -> Document:
 
         logger.info(f"Size of content from {file_name}: {round(sys.getsizeof(content)/1024, 2)}KB")
     except MemoryError:
-        logger.error(f"Not enough memory for file of size {round(os.path.getsize(file_path) / 1024 / 1024, 4)}MB")
+        logger.error(f"Not enough memory for file of size {round(os.path.getsize(file_name) / 1024 / 1024, 4)}MB")
 
     return Document(page_content=content)
 

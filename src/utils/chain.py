@@ -1,4 +1,3 @@
-import os
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough, RunnableSerializable
 from langchain_core.documents import Document
@@ -9,37 +8,29 @@ from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from functools import lru_cache
 from pinecone import Index
 from pathlib import Path
+from pydantic.v1.types import SecretStr  # Langchain requires pydantic v1...
+
+from src import ENV
 
 
 @lru_cache(maxsize=8)
 def get_lc_pinecone(index: Index, project: str) -> LCPinecone:
-    # Automatically infers OPENAI_API_KEY from env vars
-    embeddings = OpenAIEmbeddings(model=os.getenv("EMBEDDING_MODEL", ""))
+    embeddings = OpenAIEmbeddings(api_key=SecretStr(ENV["OPENAI_API_KEY"]), model=ENV["EMBEDDING_MODEL"])
     return LCPinecone(index=index, namespace=project, embedding=embeddings)
 
 
-def chunk_content(
-    content: Document, encoding_name: str = "cl100k_base", chunk_size: int = 8191, chunk_overlap: int = 100
-) -> list[Document]:
+def chunk_content(content: Document, encoding_name: str = "cl100k_base") -> list[Document]:
     """
     Splits the content of a given document into smaller chunks based on specified separators and encoding.
     The separators used for splitting include newlines, spaces, punctuation marks, and other special characters.
+    Chunk size and overlap are set as env vars.
 
     Args:
         content (Document): The input document to be split into chunks.
         encoding_name (str): Encoding used for tokenizing. Defaults to cl100k_base as it's used for 3rd gen OpenAI embedding models.
-        chunk_size (int, optional): The maximum size of each chunk. Defaults to 8191 as it's the limit for 3rd gen OpenAI embedding models.
-        chunk_overlap (int, optional): The number of characters that overlap between chunks. Defaults to 50, somewhat of an arbitrary choice.
 
     Returns:
         list[Document]: A list of chunked documents, each representing a portion of the original document content.
-
-    Example:
-        >>> from langchain.schema import Document
-        >>> doc = Document(page_content="This is a long document that needs to be chunked.")
-        >>> chunks = _chunk_content(doc)
-        >>> for chunk in chunks:
-        ...     print(chunk.page_content)
     """
     text_splitter = RecursiveCharacterTextSplitter(
         separators=[
@@ -55,11 +46,10 @@ def chunk_content(
             "\u3002",  # Ideographic full stop
             "",
         ],
-    ).from_tiktoken_encoder(
-        encoding_name=encoding_name,
-        chunk_size=chunk_size,
-        chunk_overlap=chunk_overlap,
-    )
+        chunk_size=int(ENV["CHUNK_SIZE"]),
+        chunk_overlap=int(ENV["CHUNK_OVERLAP"]),
+    ).from_tiktoken_encoder(encoding_name=encoding_name)
+
     documents = text_splitter.split_documents([content])
     return documents
 
@@ -72,8 +62,6 @@ def create_rag_chain(
     prompt_file: Path,
     prompt_inputs: tuple[str],  # Needs to be hashable for caching
     search_type: str = "similarity",
-    top_k: int = 3,
-    temperature: float = 0.2,
 ) -> RunnableSerializable:
     """
     Creates a retrieval-augmented generation (RAG) chain.
@@ -85,8 +73,6 @@ def create_rag_chain(
         prompt_file (Path): The path to the prompt file.
         prompt_inputs (tuple[str, ...]): The input variables for the prompt, must be hashable for caching.
         search_type (str): The type of search to perform. Default is "similarity".
-        top_k (int): The number of top search results to retrieve. Default is 3.
-        temperature (float): The temperature for the language model. Default is 0.2.
 
     Returns:
         RunnableSerializable: The constructed RAG chain.
@@ -101,7 +87,7 @@ def create_rag_chain(
     retriever = get_lc_pinecone(index, project).as_retriever(
         search_type=search_type,
         search_kwargs={
-            "k": top_k,
+            "k": int(ENV["TOP_K"]),
             "filter": {"name": file_name},
         },
     )
@@ -110,7 +96,11 @@ def create_rag_chain(
         prompt = file.read()
         prompt_template = PromptTemplate(input_variables=list(prompt_inputs), template=prompt)
 
-    llm = ChatOpenAI(model=os.getenv("CHATMODEL", ""), temperature=temperature)
+    llm = ChatOpenAI(
+        api_key=SecretStr(ENV["OPENAI_API_KEY"]),
+        model=ENV["CHAT_MODEL"],
+        temperature=float(ENV["TEMPERATURE"]),
+    )
     rag_chain_from_docs = (
         RunnablePassthrough.assign(context=(lambda x: _combine_context(x["context"])))
         | prompt_template

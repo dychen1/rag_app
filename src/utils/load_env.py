@@ -1,39 +1,26 @@
-import os
 from pathlib import Path
 
-from dotenv import load_dotenv
+from dotenv import dotenv_values
 
 
-REQUIRED_VARS: list[str] = [
-    "MINIO_ROOT_USER",
-    "MINIO_ROOT_PASSWORD",
-    "MINIO_VOLUMES",
-    "MINIO_HOSTNAME",
-    "MINIO_API_PORT",
-    "OPENAI_API_KEY",
-    "PINECONE_API_KEY",
-    "EMBEDDING_MODEL",
-]
-
-
-def load_env_vars(env_file: str) -> None:
+def load_env_vars(env_file: str) -> dict[str, str]:
     """
-    Load environment variables from a specified .env file and validate them.
+    Load environment variables from a .env file and store them in a dictionary.
 
-    This function checks that certain required environment variables are both present
-    and non-empty. If any required variables are missing or empty, an error is raised.
-
-    Parameters:
-        env_file (str): The file path to the .env file.
+    Args:
+        env_file (str): The path to the .env file.
 
     Returns:
-        dict[str, str]: A dictionary of the environment variables and their values.
+        dict[str, str]: A dictionary containing the environment variables from the .env file.
 
     Raises:
-        EnvironmentError: If any required environment variables are missing or empty.
+        EnvironmentError: If any required environment variables are not set (i.e., have a value of None).
     """
-    load_dotenv(dotenv_path=Path(env_file))
+    env = dotenv_values(dotenv_path=Path(env_file))
+    validated_vars: dict[str, str] = {key: val for key, val in env.items() if val is not None}
+    if len(env.keys()) != len(validated_vars.keys()):
+        raise EnvironmentError(
+            f"Missing required environment variables: {[k for k in env.keys() if k not in validated_vars.keys()]}"
+        )
 
-    missing_vars = [var for var in REQUIRED_VARS if not os.getenv(var, "").strip()]
-    if missing_vars:
-        raise EnvironmentError(f"Missing required environment variables: {', '.join(missing_vars)}")
+    return validated_vars

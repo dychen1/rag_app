@@ -7,13 +7,13 @@ from typing import BinaryIO
 
 from src.models.response import UploadResponse
 from src.utils.decorators import async_retry
-from src.utils.logger import init_logger
+from src.utils.logger import get_logger
 from src.utils.clients import get_minio_client
 
 
 SUPPORT_FILE_TYPES: list[str] = ["pdf", "tiff", "png", "jpeg", "txt"]  # Added txt for testing
 router = APIRouter()
-logger = init_logger(file_path=Path(__file__).parent.parent.parent / "etc" / "logs")
+logger = get_logger(file_path=Path(__file__).parent.parent.parent / "etc" / "logs")
 
 
 @router.post("/upload")
@@ -39,7 +39,10 @@ async def upload_files(
         - Iterate through list of files.
         - Perform checks on each file.
         - Make sure Minio bucket exists for the client+project, creates one if it doesnt.
-        -
+
+    Note:
+        - 1GB per file hardcoded size limit, subject to change if needed.
+
     """
     signed_urls: list[str] = []
     empty_files: list[str] = []
@@ -62,7 +65,7 @@ async def upload_files(
             unsupported_files.append(file.filename)
             continue
 
-        if file.size > 1000 * 1024 * 1024:
+        if file.size > 1000 * 1024 * 1024:  # NOTE: Hardcoded 1GB filesize limit
             files_too_large.append(file.filename)
             continue
 
@@ -124,7 +127,7 @@ async def _upload_to_minio(minio_client: Minio, bucket_name: str, file_data: Bin
         object_name=file_name,
         data=file_data,
         length=-1,  # -1 is used when the size of file uploads is unknown
-        part_size=1024 * 1024 * 10,  # Upload file in 10MB chunks
+        part_size=1024 * 1024 * 10,  # Upload file in 10MB chunks, minimum allowed for Minio is 5MB
     )
     # Generate a presigned URL for accessing the uploaded file, using default 7 day expiration
     return minio_client.presigned_get_object(bucket_name, file_name)

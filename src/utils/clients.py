@@ -2,12 +2,13 @@ from minio import Minio
 from async_lru import alru_cache
 from pathlib import Path
 from pinecone import Pinecone, Index, ServerlessSpec
-import os
 from functools import lru_cache
-from src.utils.logger import init_logger
+
+from src.utils.logger import get_logger
+from src import ENV
 
 ETC_PATH: Path = Path(__file__).parent.parent.parent / "etc"
-logger = init_logger(ETC_PATH / "logs")
+logger = get_logger(ETC_PATH / "logs")
 
 DIMENSIONS: dict[str, int] = {
     "text-embedding-3-small": 1536,
@@ -24,9 +25,9 @@ def get_minio_client() -> Minio:
     Can cache multiple Minio clients in case different customers/projects have different buckets.
     """
     return Minio(
-        endpoint=f"{os.getenv('MINIO_HOSTNAME')}:{os.getenv('MINIO_API_PORT')}",
-        access_key=os.getenv("MINIO_ROOT_USER"),
-        secret_key=os.getenv("MINIO_ROOT_PASSWORD"),
+        endpoint=f"{ENV['MINIO_HOSTNAME']}:{ENV['MINIO_API_PORT']}",
+        access_key=ENV["MINIO_ROOT_USER"],
+        secret_key=ENV["MINIO_ROOT_PASSWORD"],
         secure=False,  # since its localhost, no https
     )
 
@@ -36,7 +37,7 @@ def get_pinecone_client() -> Pinecone:
     """
     Configure and serve Pinecone client. Client is cached for reuse.
     """
-    return Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
+    return Pinecone(api_key=ENV["PINECONE_API_KEY"])
 
 
 @alru_cache(maxsize=8)  # Can increase cache size if we have more indexes
@@ -66,7 +67,7 @@ async def get_pinecone_index(
     if client not in existing_index_names:
         pinecone_client.create_index(
             name=client,
-            dimension=DIMENSIONS[os.getenv("EMBEDDING_MODEL", "")] if dimension is None else dimension,
+            dimension=DIMENSIONS[ENV["EMBEDDING_MODEL"]] if dimension is None else dimension,
             metric=metric,
             spec=ServerlessSpec(cloud=cloud, region=region),
         )

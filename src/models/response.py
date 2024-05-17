@@ -8,6 +8,9 @@ class UploadResponse(BaseModel):
 
 
 class CreateEmbeddingsResponse(BaseModel):
+    ids: list[str]
+    timestamp: int
+    file_name: str
     details: str
 
 
