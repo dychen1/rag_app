@@ -11,9 +11,11 @@ from src.utils.logger import get_logger
 from src.utils.clients import get_minio_client
 
 
-SUPPORT_FILE_TYPES: list[str] = ["pdf", "tiff", "png", "jpeg", "txt"]  # Added txt for testing
 router = APIRouter()
 logger = get_logger(file_path=Path(__file__).parent.parent.parent / "etc" / "logs")
+
+SUPPORT_FILE_TYPES: list[str] = ["pdf", "tiff", "png", "jpeg", "txt"]  # Added txt for testing
+FILE_SIZE_LIMIT: int = 1024 * 1024 * 1000 * 2  # Internal limit for safety, hard coded to 2GB
 
 
 @router.post("/upload")
@@ -65,7 +67,7 @@ async def upload_files(
             unsupported_files.append(file.filename)
             continue
 
-        if file.size > 1000 * 1024 * 1024:  # NOTE: Hardcoded 1GB filesize limit
+        if file.size > FILE_SIZE_LIMIT:
             files_too_large.append(file.filename)
             continue
 
