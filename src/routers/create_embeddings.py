@@ -84,7 +84,7 @@ async def create_embeddings(
     index = await get_pinecone_index(request.client)
 
     # Upload embeddings to vector db
-    await _upload_to_vectorstore(index, request.client, request.project, documents, ids)
+    await _upload_to_pinecone(index, request.client, request.project, documents, ids)
 
     return CreateEmbeddingsResponse(
         ids=ids,
@@ -159,7 +159,6 @@ async def _mock_ocr_extraction(file_name: str) -> Document:
             with open(samples_path / "建築基準法施行令.json") as file:
                 data = json.load(file)
                 content = data["analyzeResult"]["content"]
-                print("HERE@@@")
 
         elif file_name == "東京都建築安全条例.pdf":
             with open(samples_path / "東京都建築安全条例.json") as file:
@@ -181,9 +180,19 @@ async def _mock_ocr_extraction(file_name: str) -> Document:
 
 
 @async_retry(logger=logger, max_attempts=3, initial_delay=1, backoff_base=2)
-async def _upload_to_vectorstore(
+async def _upload_to_pinecone(
     index: Index, client: str, project: str, documents: list[Document], ids: list[str]
 ) -> None:
+    """
+    Internal function to upload documents to a Pinecone index with retries in case of failures.
+
+    Args:
+        index (Index): Pinecone index to which the documents will be uploaded.
+        client (str): Client/index name associated with the upload.
+        project (str): Project name/namespace associated with the upload.
+        documents (list[Document]): List of chunked documents to upload.
+        ids (list[str]): The list of IDs corresponding to the documents in order.
+    """
     start = time.time()
     lc_pinecone = get_lc_pinecone(index, project)
     await lc_pinecone.aadd_documents(documents=documents, ids=ids)  # Adds chunked documents with upsert async
