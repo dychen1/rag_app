@@ -11,6 +11,10 @@ from pathlib import Path
 from pydantic.v1.types import SecretStr  # Langchain requires pydantic v1...
 
 from src import ENV
+from src.utils.logger import get_logger
+
+ETC_PATH: Path = Path(__file__).parent.parent.parent / "etc"
+logger = get_logger(ETC_PATH / "logs")
 
 
 @lru_cache(maxsize=8)
@@ -19,7 +23,12 @@ def get_lc_pinecone(index: Index, project: str) -> LCPinecone:
     return LCPinecone(index=index, namespace=project, embedding=embeddings)
 
 
-def chunk_content(content: Document, encoding_name: str = "cl100k_base") -> list[Document]:
+def chunk_content(
+    content: Document,
+    encoding_name: str = "cl100k_base",
+    chunk_size: int = int(ENV["CHUNK_SIZE"]),
+    chunk_overlap: int = int(ENV["CHUNK_OVERLAP"]),
+) -> list[Document]:
     """
     Splits the content of a given document into smaller chunks based on specified separators and encoding.
     The separators used for splitting include newlines, spaces, punctuation marks, and other special characters.
@@ -32,7 +41,8 @@ def chunk_content(content: Document, encoding_name: str = "cl100k_base") -> list
     Returns:
         list[Document]: A list of chunked documents, each representing a portion of the original document content.
     """
-    text_splitter = RecursiveCharacterTextSplitter(
+    text_splitter = RecursiveCharacterTextSplitter().from_tiktoken_encoder(
+        encoding_name=encoding_name,
         separators=[
             "\n\n",
             "\n",
@@ -46,9 +56,12 @@ def chunk_content(content: Document, encoding_name: str = "cl100k_base") -> list
             "\u3002",  # Ideographic full stop
             "",
         ],
-        chunk_size=int(ENV["CHUNK_SIZE"]),
-        chunk_overlap=int(ENV["CHUNK_OVERLAP"]),
-    ).from_tiktoken_encoder(encoding_name=encoding_name)
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+    )
+    logger.debug(
+        f"Chunking with separators: {text_splitter._separators}, chunk_size: {text_splitter._chunk_size}, chunk_overlap: {text_splitter._chunk_overlap}"
+    )
 
     documents = text_splitter.split_documents([content])
     return documents
@@ -84,13 +97,15 @@ def create_rag_chain(
     4. Constructs the RAG chain using the retriever, prompt template, and language model object.
     5. Returns the constructed RAG chain.
     """
+    top_k = int(ENV["TOP_K"])
     retriever = get_lc_pinecone(index, project).as_retriever(
         search_type=search_type,
         search_kwargs={
-            "k": int(ENV["TOP_K"]),
+            "k": top_k,
             "filter": {"name": file_name},
         },
     )
+    logger.info(f"Fetched top {top_k} chunks for file '{file_name}'")
 
     with open(Path(__file__).parent.parent / "prompts" / prompt_file) as file:
         prompt = file.read()
