@@ -3,7 +3,7 @@ from fastapi import FastAPI, Depends
 from fastapi.testclient import TestClient
 from unittest.mock import patch
 
-from src.routers import upload
+from src.routers import upload, create_embeddings
 from src.utils.clients import get_minio_client
 
 
@@ -27,8 +27,23 @@ def mock_minio_methods(mock_minio_client):
 
 
 @pytest.fixture
-def test_app(mock_minio_methods):
+def mock_pinecone_index():
+    """Fixture to mock Pinecone index."""
+    with patch("src.utils.clients.get_pinecone_index") as mock:
+        yield mock
+
+
+@pytest.fixture
+def mock_aiohttp_session():
+    """Fixture to mock aiohttp ClientSession."""
+    with patch("aiohttp.ClientSession.get") as mock:
+        yield mock
+
+
+@pytest.fixture
+def test_app(mock_minio_methods, mock_pinecone_index, mock_aiohttp_session):
     app = FastAPI()
     app.include_router(upload.router, dependencies=[Depends(lambda: None)])  # Placeholder dependency
     app.dependency_overrides[get_minio_client] = lambda: mock_minio_methods
+    app.include_router(create_embeddings.router)
     return TestClient(app)

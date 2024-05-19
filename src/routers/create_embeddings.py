@@ -74,11 +74,7 @@ async def create_embeddings(
     logger.info(f"Split content into {len(documents)} documents.")
 
     # Add metadata to documents and generate ids for vectors manually
-    ids: list[str] = []
-    for idx, doc in enumerate(documents):
-        doc.metadata = {"name": file_name, "chunk_id": idx, "timestamp": timestamp}
-        ids.append(hash_string(f"{idx}_{file_name}"))  # Hash ids so that we can represent doc name in ASCII
-    logger.debug(f"Generated {len(ids)} id's for documents chunks: {ids}.")
+    ids, documents = _add_metadata(documents, file_name, timestamp)
 
     # Get pinecone index, create if it doesnt exist for client
     index = await get_pinecone_index(request.client)
@@ -177,6 +173,28 @@ async def _mock_ocr_extraction(file_name: str) -> Document:
         logger.error(f"Not enough memory for file of size {round(os.path.getsize(file_name) / 1024 / 1024, 4)}MB")
 
     return Document(page_content=content)
+
+
+def _add_metadata(documents: list[Document], file_name: str, timestamp: int) -> tuple[list[str], list[Document]]:
+    """
+    Adds metadata to each document in the provided list and generates unique IDs for each document chunk.
+
+    Args:
+        documents (list[Document]): List of Document objects to which metadata will be added.
+        file_name (str): Name of the file to be included in the metadata of each document.
+        timestamp (int): Timestamp for when the endpoint was called.
+
+    Returns:
+        tuple[list[str], list[Document]]: A tuple containing two elements:
+            - A list of unique string IDs generated for each document chunk.
+            - The list of Document objects with updated metadata.
+    """
+    ids: list[str] = []
+    for idx, doc in enumerate(documents):
+        doc.metadata = {"name": file_name, "chunk_id": idx, "timestamp": timestamp}
+        ids.append(hash_string(f"{idx}_{file_name}"))  # Hash ids so that we can represent doc name in ASCII
+    logger.debug(f"Generated {len(ids)} id's for documents chunks: {ids}.")
+    return (ids, documents)
 
 
 @async_retry(logger=logger, max_attempts=3, initial_delay=1, backoff_base=2)
