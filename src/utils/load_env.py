@@ -17,7 +17,7 @@ def load_env_vars(env_file: str) -> dict[str, str]:
         EnvironmentError: If any required environment variables are not set (i.e., have a value of None).
     """
     env = dotenv_values(dotenv_path=Path(env_file))
-    validated_vars: dict[str, str] = {key: val for key, val in env.items() if val is not None}
+    validated_vars: dict[str, str] = {key: val for key, val in env.items() if val}
     if len(env.keys()) != len(validated_vars.keys()):
         raise EnvironmentError(
             f"Missing required environment variables: {[k for k in env.keys() if k not in validated_vars.keys()]}"
