@@ -1,11 +1,12 @@
-from minio import Minio
-from async_lru import alru_cache
-from pathlib import Path
-from pinecone import Pinecone, Index, ServerlessSpec
 from functools import lru_cache
+from pathlib import Path
 
-from src.utils.logger import get_logger
+from async_lru import alru_cache
+from minio import Minio
+from pinecone import Index, Pinecone, ServerlessSpec  # type: ignore
+
 from src import ENV
+from src.utils.logger import get_logger
 
 ETC_PATH: Path = Path(__file__).parent.parent.parent / "etc"
 logger = get_logger(ETC_PATH / "logs")

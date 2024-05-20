@@ -1,12 +1,13 @@
-from fastapi import APIRouter
 from pathlib import Path
+
+from fastapi import APIRouter
 from langchain_core.documents import Document
 
-from src.models.response import QueryResponse
 from src.models.requests import QueryRequest
-from src.utils.logger import get_logger
+from src.models.response import QueryResponse
 from src.utils.chain import create_rag_chain
 from src.utils.clients import get_pinecone_index
+from src.utils.logger import get_logger
 
 router = APIRouter()
 logger = get_logger(file_path=Path(__file__).parent.parent.parent / "etc" / "logs")

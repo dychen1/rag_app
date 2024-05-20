@@ -1,7 +1,8 @@
+from typing import Callable
+
 from fastapi import FastAPI, Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
-from typing import Callable
 
 
 class AuthMiddleware(BaseHTTPMiddleware):

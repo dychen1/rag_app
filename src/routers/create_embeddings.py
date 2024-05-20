@@ -1,24 +1,24 @@
-import aiofiles
 import json
 import os
 import sys
 import time
-from aiohttp import ClientSession
-from fastapi import HTTPException, APIRouter
-from datetime import datetime
-from datetime import timezone
-from langchain_core.documents import Document
+from datetime import datetime, timezone
 from pathlib import Path
-from pinecone import Index
-from urllib.parse import urlparse, unquote
+from urllib.parse import unquote, urlparse
+
+import aiofiles
+from aiohttp import ClientSession
+from fastapi import APIRouter, HTTPException
+from langchain_core.documents import Document
+from pinecone import Index  # type: ignore
 
 from src.models.requests import CreateEmbeddingsRequest
 from src.models.response import CreateEmbeddingsResponse
-from src.utils.decorators import async_retry
-from src.utils.logger import get_logger
+from src.utils.chain import chunk_content, get_lc_pinecone
 from src.utils.clients import get_pinecone_index
+from src.utils.decorators import async_retry
 from src.utils.hashers import hash_string
-from src.utils.chain import get_lc_pinecone, chunk_content
+from src.utils.logger import get_logger
 
 ETC_PATH: Path = Path(__file__).parent.parent.parent / "etc"
 router = APIRouter()
@@ -38,7 +38,8 @@ async def create_embeddings(
     Endpoint to create and store embeddings for a document fetched from a given URL.
 
     Args:
-        request (CreateEmbeddingsRequest): Request object containing the URL of the document to be processed, along with client and project information.
+        request (CreateEmbeddingsRequest): Request object containing the URL of the document to be processed,
+        along with client and project information.
 
     Returns:
         CreateEmbeddingsResponse: Response object containing details of the operation.
@@ -53,7 +54,7 @@ async def create_embeddings(
         7. Uploads the embeddings to the vector database.
     """
     # Set file path
-    # Epoch time in microseconds to minimize race condition when two files with same name are downloaded at the same time
+    # Epoch time - microseconds to minimize race condition when two files with same name are downloaded at the same time
     timestamp: int = int(datetime.now(timezone.utc).timestamp() * 10**6)
     file_name: str = unquote(str(os.path.basename(urlparse(request.url).path)))
     stamped_file_name = str(timestamp) + "_" + file_name
@@ -112,12 +113,14 @@ async def _download_file(url: str, download_path: Path) -> None:
         async with session.get(url, headers=headers) as response:
             response.raise_for_status()
 
-            async with aiofiles.open(partial_file, mode) as f:
+            # mypy failing to recognize type for mode
+            async with aiofiles.open(str(partial_file), mode) as f:  # type: ignore
                 async for chunk in response.content.iter_chunked(1024 * 10):  # Reads response in 10KB chunks
                     await f.write(chunk)
                     await f.flush()
 
-        partial_file.rename(download_path)  # Remove .part suffix when download is complete
+        # Remove .part suffix when download is complete
+        partial_file.rename(download_path)
 
     async with ClientSession() as session:
         try:

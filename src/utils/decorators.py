@@ -1,7 +1,8 @@
 import asyncio
-from functools import wraps
-from fastapi import HTTPException
 import logging
+from functools import wraps
+
+from fastapi import HTTPException
 
 
 def async_retry(logger: logging.Logger, max_attempts: int = 3, initial_delay: int = 1, backoff_base: int = 2):

@@ -1,14 +1,15 @@
+from functools import lru_cache
+from pathlib import Path
+
 import tiktoken
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_core.runnables import RunnableParallel, RunnablePassthrough, RunnableSerializable
+from langchain.prompts import PromptTemplate
 from langchain_core.documents import Document
 from langchain_core.output_parsers import StrOutputParser
-from langchain.prompts import PromptTemplate
+from langchain_core.runnables import RunnableParallel, RunnablePassthrough, RunnableSerializable
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_pinecone import PineconeVectorStore as LCPinecone
-from langchain_openai import OpenAIEmbeddings, ChatOpenAI
-from functools import lru_cache
-from pinecone import Index
-from pathlib import Path
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from pinecone import Index  # type: ignore
 from pydantic.v1.types import SecretStr  # Langchain requires pydantic v1...
 
 from src import ENV

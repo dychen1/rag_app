@@ -1,6 +1,6 @@
 from pathlib import Path
-from src.utils.load_env import load_env_vars
 
+from src.utils.load_env import load_env_vars
 
 etc_path = Path(__file__).parent.parent / "etc"
 

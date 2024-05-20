@@ -1,5 +1,4 @@
 from pydantic import BaseModel
-from langchain_core.documents import Document
 
 
 class UploadResponse(BaseModel):

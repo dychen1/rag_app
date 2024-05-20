@@ -1,10 +1,9 @@
-from fastapi import FastAPI, Depends
+from fastapi import Depends, FastAPI
 
-from src.routers import upload, create_embeddings, query
+from src import ENV
+from src.routers import create_embeddings, query, upload
 from src.utils.clients import get_minio_client
 from src.utils.middleware.auth import AuthMiddleware
-from src import ENV
-
 
 app = FastAPI()
 app.add_middleware(AuthMiddleware, api_key=ENV["API_KEY"])
