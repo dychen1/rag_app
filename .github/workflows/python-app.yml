@@ -25,13 +25,13 @@ jobs:
         run: poetry install
 
       - name: black check
-        run: black ./src --line-length 120 --check
+        run: poetry run black ./src --line-length 120 --check
 
       - name: flake8 check
-        run: flake8 ./src --extend-ignore=E501,W503
+        run: poetry run flake8 ./src --extend-ignore=E501,W503
 
       - name: mypy check
-        run: mypy ./src/
+        run: poetry run mypy ./src/
 
       - name: pytest check
-        run: pytest --vv 
+        run: poetry run pytest --vv 
