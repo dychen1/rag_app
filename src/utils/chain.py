@@ -1,3 +1,4 @@
+import tiktoken
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough, RunnableSerializable
 from langchain_core.documents import Document
@@ -25,7 +26,6 @@ def get_lc_pinecone(index: Index, project: str) -> LCPinecone:
 
 def chunk_content(
     content: Document,
-    encoding_name: str = "cl100k_base",
     chunk_size: int = int(ENV["CHUNK_SIZE"]),
     chunk_overlap: int = int(ENV["CHUNK_OVERLAP"]),
 ) -> list[Document]:
@@ -41,8 +41,9 @@ def chunk_content(
     Returns:
         list[Document]: A list of chunked documents, each representing a portion of the original document content.
     """
+    encoding = tiktoken.encoding_for_model(ENV["CHAT_MODEL"])
     text_splitter = RecursiveCharacterTextSplitter().from_tiktoken_encoder(
-        encoding_name=encoding_name,
+        encoding_name=encoding.name,
         separators=[
             "\n\n",
             "\n",
@@ -60,7 +61,7 @@ def chunk_content(
         chunk_overlap=chunk_overlap,
     )
     logger.debug(
-        f"Chunking with separators: {text_splitter._separators}, chunk_size: {text_splitter._chunk_size}, chunk_overlap: {text_splitter._chunk_overlap}"
+        f"Chunking using encoding '{encoding.name}' with separators: {text_splitter._separators}, chunk_size: {text_splitter._chunk_size}, chunk_overlap: {text_splitter._chunk_overlap}"
     )
 
     documents = text_splitter.split_documents([content])
