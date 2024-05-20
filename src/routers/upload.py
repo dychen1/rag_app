@@ -43,7 +43,7 @@ async def upload_files(
         - Make sure Minio bucket exists for the client+project, creates one if it doesnt.
 
     Note:
-        - 1GB per file hardcoded size limit, subject to change if needed.
+        - 2GB per file hardcoded size limit, subject to change if needed.
 
     """
     signed_urls: list[str] = []
