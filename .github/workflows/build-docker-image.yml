@@ -41,5 +41,3 @@ jobs:
               push: true
               tags: ${{ secrets.DOCKER_USERNAME }}/rag_app:latest
     
-          - name: Build Docker Compose services
-            run: docker-compose -f docker-compose.yml build
