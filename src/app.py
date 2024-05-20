@@ -10,3 +10,5 @@ app.add_middleware(AuthMiddleware, api_key=ENV["API_KEY"])
 app.include_router(upload.router, dependencies=[Depends(get_minio_client)])
 app.include_router(create_embeddings.router)
 app.include_router(query.router)
+
+print("test")
