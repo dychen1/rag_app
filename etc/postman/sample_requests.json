@@ -1,0 +1,251 @@
+{
+	"info": {
+		"_postman_id": "16b7b3fe-0418-4ce0-a6cf-c38419ca79db",
+		"name": "tektome",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "31396940"
+	},
+	"item": [
+		{
+			"name": "upload - docker",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "x-api-key",
+						"value": "key123",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "files",
+							"type": "file",
+							"src": [
+								"../sample_files/東京都建築安全条例.pdf",
+								"../sample_files/建築基準法施行令.pdf"
+							]
+						},
+						{
+							"key": "client",
+							"value": "test",
+							"type": "text"
+						},
+						{
+							"key": "project",
+							"value": "hello",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "0.0.0.0:8080/upload",
+					"host": [
+						"0",
+						"0",
+						"0",
+						"0"
+					],
+					"port": "8080",
+					"path": [
+						"upload"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "upload - docker - english test",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "x-api-key",
+						"value": "key123",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "files",
+							"type": "file",
+							"src": "../ocr_samples/experiential_colearning.txt"
+						},
+						{
+							"key": "client",
+							"value": "denis",
+							"type": "text"
+						},
+						{
+							"key": "project",
+							"value": "test",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "0.0.0.0:8080/upload",
+					"host": [
+						"0",
+						"0",
+						"0",
+						"0"
+					],
+					"port": "8080",
+					"path": [
+						"upload"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "create_embeddings - docker",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "x-api-key",
+						"value": "key123",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"url\": \"http://minio1:9000/test-hello/%E5%BB%BA%E7%AF%89%E5%9F%BA%E6%BA%96%E6%B3%95%E6%96%BD%E8%A1%8C%E4%BB%A4.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=user%2F20240521%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20240521T031405Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Signature=fcab05ebdf4dbe60a209ad1f350382a733dee622d3812decd9f175b7df2db8e4\",\n    \"client\": \"test-client\",\n    \"project\": \"test-project\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "0.0.0.0:8080/create_embeddings",
+					"host": [
+						"0",
+						"0",
+						"0",
+						"0"
+					],
+					"port": "8080",
+					"path": [
+						"create_embeddings"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "create_embeddings - docker - english test",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "x-api-key",
+						"value": "key123",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"url\": \"http://minio1:9000/denis-test/experiential_colearning.txt?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=user%2F20240521%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20240521T031408Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Signature=af155b9c1ecdf86f4220f818fa610f7ce4f56b748fe01a179146461b95258e00\",\n    \"client\": \"denis\",\n    \"project\": \"test\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "0.0.0.0:8080/create_embeddings",
+					"host": [
+						"0",
+						"0",
+						"0",
+						"0"
+					],
+					"port": "8080",
+					"path": [
+						"create_embeddings"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "query - docker",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "x-api-key",
+						"value": "key123",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"client\": \"test-client\",\n    \"project\": \"test-project\",\n    \"file_name\": \"建築基準法施行令.pdf\",\n    \"query\": \"第1条で定義されている点は何ですか?\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "0.0.0.0:8080/query",
+					"host": [
+						"0",
+						"0",
+						"0",
+						"0"
+					],
+					"port": "8080",
+					"path": [
+						"query"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "query - docker - english test",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "x-api-key",
+						"value": "key123",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"client\": \"denis\",\n    \"project\": \"test\",\n    \"file_name\": \"experiential_colearning.txt\",\n    \"query\": \"what is experiential_colearning\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "0.0.0.0:8080/query",
+					"host": [
+						"0",
+						"0",
+						"0",
+						"0"
+					],
+					"port": "8080",
+					"path": [
+						"query"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
