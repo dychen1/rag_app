@@ -41,6 +41,7 @@ async def upload_files(
         - Iterate through list of files.
         - Perform checks on each file.
         - Make sure Minio bucket exists for the client+project, creates one if it doesnt.
+        - Uploads the files to Minio bucket.
 
     Note:
         - 2GB per file hardcoded size limit, subject to change if needed.
@@ -132,6 +133,7 @@ async def _upload_to_minio(minio_client: Minio, bucket_name: str, file_data: Bin
         part_size=1024 * 1024 * 10,  # Upload file in 10MB chunks, minimum allowed for Minio is 5MB
     )
     # Generate a presigned URL for accessing the uploaded file, using default 7 day expiration
+
     return minio_client.presigned_get_object(bucket_name, file_name)
 
 
