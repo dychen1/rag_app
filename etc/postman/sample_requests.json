@@ -224,7 +224,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"client\": \"denis\",\n    \"project\": \"test\",\n    \"file_name\": \"experiential_colearning.txt\",\n    \"query\": \"what is experiential_colearning\"\n}",
+					"raw": "{\n    \"client\": \"denis\",\n    \"project\": \"test\",\n    \"file_name\": \"experiential_colearning.txt\",\n    \"query\": \"What is experiential colearning?\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
