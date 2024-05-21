@@ -40,4 +40,5 @@ jobs:
               context: .
               push: true
               tags: ${{ secrets.DOCKER_USERNAME }}/rag_app:latest
+              platforms: linux/amd64,linux/arm64
     
