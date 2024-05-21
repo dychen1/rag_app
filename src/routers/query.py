@@ -1,7 +1,9 @@
 from pathlib import Path
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from langchain_core.documents import Document
+from openai import AuthenticationError
+from pinecone.exceptions import UnauthorizedException
 
 from src.models.requests import QueryRequest
 from src.models.response import QueryResponse
@@ -40,7 +42,15 @@ async def query(request: QueryRequest) -> QueryResponse:
         prompt_inputs=("context", "question"),
     )
     logger.debug(f"Chain created: {chain}")
-    response: dict[str, list[Document] | str] = chain.invoke(request.query)
+    # Run chain
+    try:
+        response: dict[str, list[Document] | str] = chain.invoke(request.query)
+    except UnauthorizedException:
+        raise HTTPException(status_code=401, detail=f"Unauthorized key for Pinecone index for client {request.client}.")
+    except AuthenticationError:
+        raise HTTPException(status_code=401, detail=f"Unauthorized key for OpenAI API.")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=e)
 
     if isinstance(response["answer"], str) and isinstance(response["context"], list):
         answer: str = response["answer"]
