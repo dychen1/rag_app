@@ -1,6 +1,6 @@
 # About
 
-This project is a RAG app that is capable of uploading a document to be stored, creating embeddings from the document content and querying the contents of the document with natural language.
+This project is a submission for a take home interview. It is a RAG app that is capable of uploading a document to be stored, creating embeddings from the document content and querying the contents of the document with natural language.
 
 ## Built with
 
